@@ -9,7 +9,10 @@ import * as agwa from "@aws-cdk/aws-apigatewayv2-authorizers-alpha";
 
 interface WebSocketProps {
   websocketHandler: lambda.IFunction;
+  connectHandler: lambda.IFunction;
   authHandler: lambda.IFunction;
+  disconnectHandler: lambda.IFunction;
+  sendNotificationHandler: lambda.IFunction;
   /**
    * The querystring key for setting Cognito idToken.
    */
@@ -29,16 +32,19 @@ export class WebSocket extends Construct {
 
     this.api = new agw.WebSocketApi(this, "Api", {
       connectRouteOptions: {
-        authorizer,
-        integration: new agwi.WebSocketLambdaIntegration("ConnectIntegration", props.websocketHandler),
+        // authorizer,
+        integration: new agwi.WebSocketLambdaIntegration("ConnectIntegration", props.connectHandler),
       },
       disconnectRouteOptions: {
-        integration: new agwi.WebSocketLambdaIntegration("DisconnectIntegration", props.websocketHandler),
+        integration: new agwi.WebSocketLambdaIntegration("DisconnectIntegration", props.disconnectHandler),
       },
       defaultRouteOptions: {
         integration: new agwi.WebSocketLambdaIntegration("DefaultIntegration", props.websocketHandler),
       },
     });
+
+    // custom routes
+    this.api.addRoute('sendNotification', { integration: new agwi.WebSocketLambdaIntegration("SendNotificationIntegration", props.sendNotificationHandler) })
 
     new agw.WebSocketStage(this, `Stage`, {
       webSocketApi: this.api,

@@ -18,14 +18,19 @@ export class BackendStack extends cdk.Stack {
       userPool: auth.userPool,
       userPoolClient: auth.userPoolClient,
       connectionIdTable: storage.connectionIdTable,
+      notificationsTable: storage.notificationsTable
     });
 
     const websocket = new WebSocket(this, `Websocket`, {
       authHandler: handler.authHandler,
       websocketHandler: handler.websocketHandler,
+      connectHandler: handler.connectHandler,
+      disconnectHandler: handler.disconnectHandler,
+      sendNotificationHandler: handler.sendNotificationHandler
     });
 
     websocket.api.grantManageConnections(handler.websocketHandler);
+    websocket.api.grantManageConnections(handler.sendNotificationHandler);
 
     {
       new cdk.CfnOutput(this, `Region`, {

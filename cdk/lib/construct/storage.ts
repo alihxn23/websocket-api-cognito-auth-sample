@@ -6,6 +6,7 @@ import { aws_dynamodb as dynamo, RemovalPolicy } from "aws-cdk-lib";
 
 export class Storage extends Construct {
   readonly connectionIdTable: dynamo.ITable;
+  readonly notificationsTable: dynamo.Table
 
   constructor(scope: Construct, id: string) {
     super(scope, id);
@@ -17,11 +18,17 @@ export class Storage extends Construct {
       removalPolicy: RemovalPolicy.DESTROY,
     });
 
+    const notificationsTable = new dynamo.Table(this, "NotificationsTable", {
+      partitionKey: { name: "notificationId", type: dynamo.AttributeType.STRING },
+      removalPolicy: RemovalPolicy.DESTROY
+    })
+
     connectionIdTable.addGlobalSecondaryIndex({
       partitionKey: { name: "userId", type: dynamo.AttributeType.STRING },
       indexName: "userIdIndex",
     });
 
     this.connectionIdTable = connectionIdTable;
+    this.notificationsTable = notificationsTable
   }
 }

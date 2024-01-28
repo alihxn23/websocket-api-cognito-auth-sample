@@ -13,35 +13,37 @@ export const handler: APIGatewayProxyHandler = async (event, context) => {
   const routeKey = event.requestContext.routeKey!;
   const connectionId = event.requestContext.connectionId!;
 
-  if (routeKey == "$connect") {
-    const userId = event.requestContext.authorizer!.userId;
+  // if (routeKey == "$connect") {
+  //   // const userId = event.requestContext.authorizer!.userId;
+  //   // const groups = event.requestContext.authorizer!.groups;
 
-    try {
-      await client.send(
-        new PutCommand({
-          TableName: ConnectionTableName,
-          Item: {
-            userId: userId,
-            connectionId: connectionId,
-            removedAt: Math.ceil(Date.now() / 1000) + 3600 * 3,
-          },
-        }),
-      );
-      return { statusCode: 200, body: "Connected." };
-    } catch (err) {
-      console.error(err);
-      return { statusCode: 500, body: "Connection failed." };
-    }
-  }
-  if (routeKey == "$disconnect") {
-    try {
-      await removeConnectionId(connectionId);
-      return { statusCode: 200, body: "Disconnected." };
-    } catch (err) {
-      console.error(err);
-      return { statusCode: 500, body: "Disconnection failed." };
-    }
-  }
+  //   try {
+  //     await client.send(
+  //       new PutCommand({
+  //         TableName: ConnectionTableName,
+  //         Item: {
+  //           // userId: userId,
+  //           connectionId: connectionId,
+  //           // groups: groups,
+  //           removedAt: Math.ceil(Date.now() / 1000) + 3600 * 3,
+  //         },
+  //       }),
+  //     );
+  //     return { statusCode: 200, body: "Connected." };
+  //   } catch (err) {
+  //     console.error(err);
+  //     return { statusCode: 500, body: "Connection failed." };
+  //   }
+  // }
+  // if (routeKey == "$disconnect") {
+  //   try {
+  //     await removeConnectionId(connectionId);
+  //     return { statusCode: 200, body: "Disconnected." };
+  //   } catch (err) {
+  //     console.error(err);
+  //     return { statusCode: 500, body: "Disconnection failed." };
+  //   }
+  // }
 
   // Just echo back messages in other route than connect, disconnect (for testing purpose)
   const domainName = event.requestContext.domainName!;

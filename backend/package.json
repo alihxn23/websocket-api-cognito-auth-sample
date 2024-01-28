@@ -3,15 +3,17 @@
     "build": "tsc"
   },
   "dependencies": {
-    "aws-jwt-verify": "^2.1.0",
     "@aws-sdk/client-apigatewaymanagementapi": "^3.350.0",
     "@aws-sdk/client-dynamodb": "^3.351.0",
-    "@aws-sdk/lib-dynamodb": "^3.254.0"
+    "@aws-sdk/lib-dynamodb": "^3.254.0",
+    "aws-jwt-verify": "^2.1.0",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.72",
     "@types/jest": "^26.0.10",
     "@types/node": "^14.14.37",
+    "@types/uuid": "^9.0.8",
     "jest": "^26.4.2",
     "ts-jest": "^26.5.3",
     "ts-node": "^9.0.0",
