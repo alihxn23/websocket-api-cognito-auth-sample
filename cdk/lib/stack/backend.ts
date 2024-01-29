@@ -26,11 +26,13 @@ export class BackendStack extends cdk.Stack {
       websocketHandler: handler.websocketHandler,
       connectHandler: handler.connectHandler,
       disconnectHandler: handler.disconnectHandler,
-      sendNotificationHandler: handler.sendNotificationHandler
+      sendNotificationHandler: handler.sendNotificationHandler,
+      getNotificationHandler: handler.getNotificationHandler
     });
 
     websocket.api.grantManageConnections(handler.websocketHandler);
     websocket.api.grantManageConnections(handler.sendNotificationHandler);
+    websocket.api.grantManageConnections(handler.getNotificationHandler)
 
     {
       new cdk.CfnOutput(this, `Region`, {

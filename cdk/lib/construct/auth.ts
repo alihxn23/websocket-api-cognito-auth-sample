@@ -17,6 +17,10 @@ export class Auth extends Construct {
         email: true,
       },
       removalPolicy: RemovalPolicy.DESTROY,
+      signInAliases: {
+        email: true,
+        username: true
+      }
     });
 
     const client = userPool.addClient("Client", {

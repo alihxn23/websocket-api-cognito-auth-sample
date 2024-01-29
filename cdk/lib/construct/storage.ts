@@ -3,6 +3,7 @@
 
 import { Construct } from "constructs";
 import { aws_dynamodb as dynamo, RemovalPolicy } from "aws-cdk-lib";
+import { StreamViewType } from "aws-cdk-lib/aws-dynamodb";
 
 export class Storage extends Construct {
   readonly connectionIdTable: dynamo.ITable;
@@ -16,11 +17,13 @@ export class Storage extends Construct {
       timeToLiveAttribute: "removedAt",
       billingMode: dynamo.BillingMode.PAY_PER_REQUEST,
       removalPolicy: RemovalPolicy.DESTROY,
+      // stream: StreamViewType.NEW_IMAGE,
     });
 
     const notificationsTable = new dynamo.Table(this, "NotificationsTable", {
       partitionKey: { name: "notificationId", type: dynamo.AttributeType.STRING },
-      removalPolicy: RemovalPolicy.DESTROY
+      removalPolicy: RemovalPolicy.DESTROY,
+      // stream: StreamViewType.NEW_IMAGE,
     })
 
     connectionIdTable.addGlobalSecondaryIndex({

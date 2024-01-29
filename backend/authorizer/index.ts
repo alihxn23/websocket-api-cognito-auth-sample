@@ -58,7 +58,8 @@ const allowPolicy = (methodArn: string, idToken: any) => {
     context: {
       // set userId in the context
       userId: idToken.sub,
-      groups: idToken['cognito:groups']?.toString?.() ?? ''
+      groups: idToken['cognito:groups']?.toString?.() ?? '',
+      email: idToken.email
     },
   };
 };
