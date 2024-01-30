@@ -21,6 +21,7 @@ export class Handler extends Construct {
   readonly sendNotificationHandler: lambda.IFunction;
   readonly getNotificationHandler: lambda.IFunction;
   readonly notificationStreamHandler: lambda.IFunction;
+  readonly iotCoreToWebsocket: lambda.IFunction;
 
   constructor(scope: Construct, id: string, props: HandlerProps) {
     super(scope, id);
@@ -92,11 +93,22 @@ export class Handler extends Construct {
       startingPosition: lambda.StartingPosition.LATEST
     }))
 
+    const iotCoreToWebsocket = new lambdanode.NodejsFunction(this, 'iotCoreToWebsocketHandler', {
+      runtime: Runtime.NODEJS_18_X,
+      entry: '../backend/websocket/iotCoreToWebsocket.ts',
+      environment: {
+        CONNECTION_TABLE_NAME: props.connectionIdTable.tableName,
+        // NOTIFICATION_TABLE_NAME: props.notificationsTable.tableName
+      },
+      // timeout: Duration.seconds(30)
+    })
+
     props.connectionIdTable.grantReadWriteData(websocketHandler);
     props.connectionIdTable.grantReadWriteData(connectHandler)
     props.connectionIdTable.grantReadWriteData(disconnectHandler)
     props.connectionIdTable.grantReadWriteData(sendNotificationHandler)
     props.connectionIdTable.grantReadWriteData(notificationStreamHandler)
+    props.connectionIdTable.grantReadWriteData(iotCoreToWebsocket)
 
     props.notificationsTable.grantReadWriteData(sendNotificationHandler)
     props.notificationsTable.grantReadWriteData(getNotificationHandler)
@@ -109,5 +121,6 @@ export class Handler extends Construct {
     this.sendNotificationHandler = sendNotificationHandler
     this.getNotificationHandler = getNotificationHandler
     this.notificationStreamHandler = notificationStreamHandler
+    this.iotCoreToWebsocket = iotCoreToWebsocket
   }
 }

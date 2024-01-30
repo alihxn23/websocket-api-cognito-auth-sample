@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT-0
 
 import * as cdk from "aws-cdk-lib";
+import * as iot from "aws-cdk-lib/aws-iot";
 import { Construct } from "constructs";
 import { Auth } from "../construct/auth";
 import { Storage } from "../construct/storage";
@@ -34,6 +35,22 @@ export class BackendStack extends cdk.Stack {
     websocket.api.grantManageConnections(handler.sendNotificationHandler);
     websocket.api.grantManageConnections(handler.getNotificationHandler)
     websocket.api.grantManageConnections(handler.notificationStreamHandler)
+    websocket.api.grantManageConnections(handler.iotCoreToWebsocket)
+
+    const iotTopicRuleSql = 'SELECT * from "websocket/outgoing"'
+    // const iotTopicRule = new iot.CfnTopicRule(
+    //   this, "iotRule", {topicRulePayload: {sql: iotTopicRuleSql, actions: []}}
+    // )
+    const topicRule = new iot.CfnTopicRule(this, 'TopicRule', {
+      topicRulePayload: {
+        sql: iotTopicRuleSql,
+        actions: [
+          { lambda: { functionArn: handler.iotCoreToWebsocket.functionArn } }
+        ]
+      }
+    })
+
+    handler.iotCoreToWebsocket.addPermission("GrantIotRule", { principal: new cdk.aws_iam.ServicePrincipal("iot.amazonaws.com"), sourceArn: topicRule.attrArn })
 
     {
       new cdk.CfnOutput(this, `Region`, {

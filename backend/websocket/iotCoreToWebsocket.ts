@@ -1,0 +1,149 @@
+import { APIGatewayProxyHandler, IoTEvent } from "aws-lambda";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBDocumentClient, PutCommand, QueryCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
+import { PostToConnectionCommand } from "@aws-sdk/client-apigatewaymanagementapi";
+import { v4 as uuidv4 } from 'uuid';
+import { getManagementApi, removeConnectionId } from "./utils";
+
+const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+const ConnectionTableName = process.env.CONNECTION_TABLE_NAME!;
+// const NotificationTableName = process.env.NOTIFICATION_TABLE_NAME!;
+
+export const handler = async (event: any) => {
+    console.log(event);
+    // const routeKey = event.requestContext.routeKey!;
+    // const connectionId = event.requestContext.connectionId!;
+    // // const notificationId = uuidv4()
+    // // const body = JSON.parse(event.body || '')
+    // // const content = body.content
+    // // console.log('request body', body)
+    // // console.log('unique id', notificationId)
+
+    // // MANAGEMENT API START
+    const domainName = "dy6liiv8sg.execute-api.us-east-1.amazonaws.com";
+    // // // When we use a custom domain, we don't need to append a stage name
+    // // const endpoint = domainName.endsWith("amazonaws.com")
+    // //     ? `https://${event.requestContext.domainName}/${event.requestContext.stage}`
+    // //     : `https://${event.requestContext.domainName}`;
+    // // const managementApi = new ApiGatewayManagementApiClient({
+    // //     endpoint,
+    // // });
+    const managementApi = getManagementApi({ domainName, stage: "prod" })
+    // // MANAGEMENT API END
+
+    // // const userId = event.requestContext.authorizer!.userId;
+    // // const groups = event.requestContext.authorizer!.groups;
+    // const email = event.requestContext.authorizer?.email ?? "none@email.com"
+
+    // // return { statusCode: 200, body: "sending message" }
+
+    // // let k = await (await getNotificationsForUser()).map(n => n.content.S)
+    // let k = (await getNotificationsForUser())
+    // console.log('notifications', k)
+
+    // try {
+    //     await managementApi.send(new PostToConnectionCommand({
+    //         ConnectionId: connectionId, Data: JSON.stringify(
+    //             {
+    //                 "action": "notifications",
+    //                 content: k, 
+    //                 count: k.length
+    //             })
+    //     }))
+    // } catch (e: any) {
+    //     console.log('couldnt post to connection', e)
+    //     // try {
+    //     //     console.log('removing connection', connectionId, e)
+    //     //     await removeConnectionId(client, connectionId, ConnectionTableName)
+    //     // } catch (e: any) {
+    //     //     console.log("couldn't remove connection")
+    //     // }
+    // }
+
+
+    // try {
+    //     await client.send(
+    //         new PutCommand({
+    //             TableName: NotificationTableName,
+    //             Item: {
+    //                 // userId: userId,
+    //                 notificationId: notificationId,
+    //                 // groups: groups,
+    //                 // removedAt: Math.ceil(Date.now() / 1000) + 3600 * 3,
+    //                 sender: email,
+    //                 content: content,
+    //                 timestamp: new Date().toISOString()
+    //             },
+    //         }),
+    //     );
+    //     // return { statusCode: 200, body: "Saved to notifications table." };
+    // } catch (err) {
+    //     console.error(err);
+    //     return { statusCode: 500, body: "Could save notification." };
+    // }
+    const notificationId = uuidv4()
+    let content = [{ notificationId, content: event.message }]
+
+    const activeConnections = await client.send(new ScanCommand({ TableName: ConnectionTableName }))
+    console.log('active connections', activeConnections)
+
+    // const n = { 'action': 'notifications', content, count: 1 }
+
+    let sendMessaages = activeConnections.Items?.map(async c => {
+        try {
+            await managementApi.send(new PostToConnectionCommand({ ConnectionId: c.connectionId, Data: JSON.stringify({ action: "notifications", content }) }))
+        } catch (e: any) {
+            // if (e.statusCode == 410) {
+            try {
+                console.log('error sending to connection', e)
+                console.log('removing connection', c)
+                await removeConnectionId(client, c.connectionId, ConnectionTableName)
+            } catch (e: any) {
+                console.log("couldn't remove connection")
+            }
+            // console.log('removing connection', c)
+            // } else {
+            // console.log(e)
+            // throw e
+            // }
+        }
+    }) ?? []
+
+    await Promise.all(sendMessaages)
+
+    // try {
+    //     await managementApi.send(
+    //         new PostToConnectionCommand({ ConnectionId: connectionId, Data: "Saved Notification" })
+    //     )
+    // } catch (e: any) {
+    //     if (e.statusCode == 410) {
+    //         await removeConnectionId(client, connectionId, ConnectionTableName);
+    //     } else {
+    //         console.log(e);
+    //         throw e;
+    //     }
+    // }
+
+    return { statusCode: 200, body: "Saved to notifications table." };
+}
+// const getNotificationsForUser = async () => {
+//     let i
+//     try {
+//         i = await client.send(new ScanCommand({ TableName: NotificationTableName }))
+//     } catch (e: any) {
+//         console.log('error fetching notifications', e)
+//     }
+//     return i?.Items ?? []
+// }
+
+// const removeConnectionId = async (connectionId: string) => {
+//     return await client.send(
+//         new DeleteCommand({
+//             TableName: ConnectionTableName,
+//             Key: {
+//                 connectionId,
+//             },
+//         }),
+//     );
+// };
+
