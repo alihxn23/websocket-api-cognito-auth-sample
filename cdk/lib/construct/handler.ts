@@ -4,6 +4,7 @@
 import { Construct } from "constructs";
 import { aws_dynamodb as dynamo, aws_lambda as lambda, aws_lambda_nodejs as lambdanode, aws_cognito as cognito, Duration } from "aws-cdk-lib";
 import { Runtime } from "aws-cdk-lib/aws-lambda";
+import { DynamoEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 
 interface HandlerProps {
   connectionIdTable: dynamo.ITable;
@@ -19,6 +20,7 @@ export class Handler extends Construct {
   readonly disconnectHandler: lambda.IFunction;
   readonly sendNotificationHandler: lambda.IFunction;
   readonly getNotificationHandler: lambda.IFunction;
+  readonly notificationStreamHandler: lambda.IFunction;
 
   constructor(scope: Construct, id: string, props: HandlerProps) {
     super(scope, id);
@@ -76,22 +78,29 @@ export class Handler extends Construct {
       timeout: Duration.seconds(30)
     })
 
-    // const notificationStreamHandler = new lambdanode.NodejsFunction(this, 'getNotificationHandler', {
-    //   runtime: Runtime.NODEJS_18_X,
-    //   entry: '../backend/websocket/getNotification.ts',
-    //   environment: {
-    //     NOTIFICATION_TABLE_NAME: props.notificationsTable.tableName
-    //   },
-    //   timeout: Duration.seconds(30)
-    // })
+    const notificationStreamHandler = new lambdanode.NodejsFunction(this, 'notificationStreamHandler', {
+      runtime: Runtime.NODEJS_18_X,
+      entry: '../backend/websocket/notificationStreamHandler.ts',
+      environment: {
+        CONNECTION_TABLE_NAME: props.connectionIdTable.tableName,
+        NOTIFICATION_TABLE_NAME: props.notificationsTable.tableName
+      },
+      timeout: Duration.seconds(30)
+    })
+
+    notificationStreamHandler.addEventSource(new DynamoEventSource(props.notificationsTable, {
+      startingPosition: lambda.StartingPosition.LATEST
+    }))
 
     props.connectionIdTable.grantReadWriteData(websocketHandler);
     props.connectionIdTable.grantReadWriteData(connectHandler)
     props.connectionIdTable.grantReadWriteData(disconnectHandler)
     props.connectionIdTable.grantReadWriteData(sendNotificationHandler)
+    props.connectionIdTable.grantReadWriteData(notificationStreamHandler)
 
     props.notificationsTable.grantReadWriteData(sendNotificationHandler)
     props.notificationsTable.grantReadWriteData(getNotificationHandler)
+    props.notificationsTable.grantReadWriteData(notificationStreamHandler)
 
     this.authHandler = authHandler;
     this.websocketHandler = websocketHandler;
@@ -99,5 +108,6 @@ export class Handler extends Construct {
     this.disconnectHandler = disconnectHandler
     this.sendNotificationHandler = sendNotificationHandler
     this.getNotificationHandler = getNotificationHandler
+    this.notificationStreamHandler = notificationStreamHandler
   }
 }

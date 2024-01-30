@@ -23,7 +23,7 @@ export class Storage extends Construct {
     const notificationsTable = new dynamo.Table(this, "NotificationsTable", {
       partitionKey: { name: "notificationId", type: dynamo.AttributeType.STRING },
       removalPolicy: RemovalPolicy.DESTROY,
-      // stream: StreamViewType.NEW_IMAGE,
+      stream: StreamViewType.NEW_IMAGE,
     })
 
     connectionIdTable.addGlobalSecondaryIndex({

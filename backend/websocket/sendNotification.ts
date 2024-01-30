@@ -58,31 +58,31 @@ export const handler: APIGatewayProxyHandler = async (event, context) => {
         return { statusCode: 500, body: "Could save notification." };
     }
 
-    const activeConnections = await client.send(new ScanCommand({ TableName: ConnectionTableName }))
-    console.log('active connections', activeConnections)
+    // const activeConnections = await client.send(new ScanCommand({ TableName: ConnectionTableName }))
+    // console.log('active connections', activeConnections)
 
-    const n = { 'action': 'notifications', content, count: 1 }
+    // const n = { 'action': 'notifications', content, count: 1 }
 
-    let sendMessaages = activeConnections.Items?.filter(c => c.connectionId != connectionId)?.map(async c => {
-        try {
-            await managementApi.send(new PostToConnectionCommand({ ConnectionId: c.connectionId, Data: JSON.stringify(n) }))
-        } catch (e: any) {
-            // if (e.statusCode == 410) {
-            try {
-                console.log('removing connection', c)
-                await removeConnectionId(client, c.connectionId, ConnectionTableName)
-            } catch (e: any) {
-                console.log("couldn't remove connection")
-            }
-            // console.log('removing connection', c)
-            // } else {
-            // console.log(e)
-            // throw e
-            // }
-        }
-    }) ?? []
+    // let sendMessaages = activeConnections.Items?.filter(c => c.connectionId != connectionId)?.map(async c => {
+    //     try {
+    //         await managementApi.send(new PostToConnectionCommand({ ConnectionId: c.connectionId, Data: JSON.stringify(n) }))
+    //     } catch (e: any) {
+    //         // if (e.statusCode == 410) {
+    //         try {
+    //             console.log('removing connection', c)
+    //             await removeConnectionId(client, c.connectionId, ConnectionTableName)
+    //         } catch (e: any) {
+    //             console.log("couldn't remove connection")
+    //         }
+    //         // console.log('removing connection', c)
+    //         // } else {
+    //         // console.log(e)
+    //         // throw e
+    //         // }
+    //     }
+    // }) ?? []
 
-    await Promise.all(sendMessaages)
+    // await Promise.all(sendMessaages)
 
     // try {
     //     await managementApi.send(
