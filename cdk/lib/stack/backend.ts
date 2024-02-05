@@ -19,7 +19,7 @@ export class BackendStack extends cdk.Stack {
       userPool: auth.userPool,
       userPoolClient: auth.userPoolClient,
       connectionIdTable: storage.connectionIdTable,
-      notificationsTable: storage.notificationsTable
+      notificationsTable: storage.notificationsTable,
     });
 
     const websocket = new WebSocket(this, `Websocket`, {
@@ -28,29 +28,33 @@ export class BackendStack extends cdk.Stack {
       connectHandler: handler.connectHandler,
       disconnectHandler: handler.disconnectHandler,
       sendNotificationHandler: handler.sendNotificationHandler,
-      getNotificationHandler: handler.getNotificationHandler
+      getNotificationHandler: handler.getNotificationHandler,
+      sendToTopicHandler: handler.websocketToIotCore,
     });
 
     websocket.api.grantManageConnections(handler.websocketHandler);
     websocket.api.grantManageConnections(handler.sendNotificationHandler);
-    websocket.api.grantManageConnections(handler.getNotificationHandler)
-    websocket.api.grantManageConnections(handler.notificationStreamHandler)
-    websocket.api.grantManageConnections(handler.iotCoreToWebsocket)
+    websocket.api.grantManageConnections(handler.getNotificationHandler);
+    websocket.api.grantManageConnections(handler.notificationStreamHandler);
+    websocket.api.grantManageConnections(handler.iotCoreToWebsocket);
 
-    const iotTopicRuleSql = 'SELECT * from "websocket/outgoing"'
+    const iotTopicRuleSql = 'SELECT * from "websocket/outgoing"';
     // const iotTopicRule = new iot.CfnTopicRule(
     //   this, "iotRule", {topicRulePayload: {sql: iotTopicRuleSql, actions: []}}
     // )
-    const topicRule = new iot.CfnTopicRule(this, 'TopicRule', {
+    const topicRule = new iot.CfnTopicRule(this, "TopicRule", {
       topicRulePayload: {
         sql: iotTopicRuleSql,
-        actions: [
-          { lambda: { functionArn: handler.iotCoreToWebsocket.functionArn } }
-        ]
-      }
-    })
+        actions: [{ lambda: { functionArn: handler.iotCoreToWebsocket.functionArn } }],
+      },
+    });
 
-    handler.iotCoreToWebsocket.addPermission("GrantIotRule", { principal: new cdk.aws_iam.ServicePrincipal("iot.amazonaws.com"), sourceArn: topicRule.attrArn })
+    handler.iotCoreToWebsocket.addPermission("GrantIotRule", {
+      principal: new cdk.aws_iam.ServicePrincipal("iot.amazonaws.com"),
+      sourceArn: topicRule.attrArn,
+    });
+
+    // handler.websocketToIotCore.addToRolePolicy(new cdk.aws_iam.)
 
     {
       new cdk.CfnOutput(this, `Region`, {

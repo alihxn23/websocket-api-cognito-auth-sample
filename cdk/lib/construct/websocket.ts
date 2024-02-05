@@ -13,7 +13,8 @@ interface WebSocketProps {
   authHandler: lambda.IFunction;
   disconnectHandler: lambda.IFunction;
   sendNotificationHandler: lambda.IFunction;
-  getNotificationHandler: lambda.IFunction
+  getNotificationHandler: lambda.IFunction;
+  sendToTopicHandler: lambda.IFunction;
   /**
    * The querystring key for setting Cognito idToken.
    */
@@ -45,8 +46,13 @@ export class WebSocket extends Construct {
     });
 
     // custom routes
-    this.api.addRoute('sendNotification', { integration: new agwi.WebSocketLambdaIntegration("SendNotificationIntegration", props.sendNotificationHandler) })
-    this.api.addRoute('getNotifications', { integration: new agwi.WebSocketLambdaIntegration("GetNotificationIntegration", props.getNotificationHandler) })
+    this.api.addRoute("sendNotification", {
+      integration: new agwi.WebSocketLambdaIntegration("SendNotificationIntegration", props.sendNotificationHandler),
+    });
+    this.api.addRoute("getNotifications", {
+      integration: new agwi.WebSocketLambdaIntegration("GetNotificationIntegration", props.getNotificationHandler),
+    });
+    this.api.addRoute("sendToTopic", { integration: new agwi.WebSocketLambdaIntegration("SendToTopicIntegration", props.sendToTopicHandler) });
 
     new agw.WebSocketStage(this, `Stage`, {
       webSocketApi: this.api,

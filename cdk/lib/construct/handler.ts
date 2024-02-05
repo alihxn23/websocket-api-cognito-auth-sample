@@ -22,6 +22,7 @@ export class Handler extends Construct {
   readonly getNotificationHandler: lambda.IFunction;
   readonly notificationStreamHandler: lambda.IFunction;
   readonly iotCoreToWebsocket: lambda.IFunction;
+  readonly websocketToIotCore: lambda.IFunction;
 
   constructor(scope: Construct, id: string, props: HandlerProps) {
     super(scope, id);
@@ -48,79 +49,92 @@ export class Handler extends Construct {
       entry: "../backend/websocket/connect.ts",
       environment: {
         CONNECTION_TABLE_NAME: props.connectionIdTable.tableName,
-        NOTIFICATION_TABLE_NAME: props.notificationsTable.tableName
-      }
-    })
+        NOTIFICATION_TABLE_NAME: props.notificationsTable.tableName,
+      },
+    });
 
-    const disconnectHandler = new lambdanode.NodejsFunction(this, 'disconnectHandler', {
+    const disconnectHandler = new lambdanode.NodejsFunction(this, "disconnectHandler", {
       runtime: Runtime.NODEJS_18_X,
-      entry: '../backend/websocket/connect.ts',
+      entry: "../backend/websocket/connect.ts",
       environment: {
         CONNECTION_TABLE_NAME: props.connectionIdTable.tableName,
       },
-    })
+    });
 
-    const sendNotificationHandler = new lambdanode.NodejsFunction(this, 'sendNotificationHandler', {
+    const sendNotificationHandler = new lambdanode.NodejsFunction(this, "sendNotificationHandler", {
       runtime: Runtime.NODEJS_18_X,
-      entry: '../backend/websocket/sendNotification.ts',
+      entry: "../backend/websocket/sendNotification.ts",
       environment: {
         CONNECTION_TABLE_NAME: props.connectionIdTable.tableName,
-        NOTIFICATION_TABLE_NAME: props.notificationsTable.tableName
+        NOTIFICATION_TABLE_NAME: props.notificationsTable.tableName,
       },
-      timeout: Duration.seconds(30)
-    })
+      timeout: Duration.seconds(30),
+    });
 
-    const getNotificationHandler = new lambdanode.NodejsFunction(this, 'getNotificationHandler', {
+    const getNotificationHandler = new lambdanode.NodejsFunction(this, "getNotificationHandler", {
       runtime: Runtime.NODEJS_18_X,
-      entry: '../backend/websocket/getNotification.ts',
+      entry: "../backend/websocket/getNotification.ts",
       environment: {
-        NOTIFICATION_TABLE_NAME: props.notificationsTable.tableName
+        NOTIFICATION_TABLE_NAME: props.notificationsTable.tableName,
       },
-      timeout: Duration.seconds(30)
-    })
+      timeout: Duration.seconds(30),
+    });
 
-    const notificationStreamHandler = new lambdanode.NodejsFunction(this, 'notificationStreamHandler', {
+    const notificationStreamHandler = new lambdanode.NodejsFunction(this, "notificationStreamHandler", {
       runtime: Runtime.NODEJS_18_X,
-      entry: '../backend/websocket/notificationStreamHandler.ts',
+      entry: "../backend/websocket/notificationStreamHandler.ts",
       environment: {
         CONNECTION_TABLE_NAME: props.connectionIdTable.tableName,
-        NOTIFICATION_TABLE_NAME: props.notificationsTable.tableName
+        NOTIFICATION_TABLE_NAME: props.notificationsTable.tableName,
       },
-      timeout: Duration.seconds(30)
-    })
+      timeout: Duration.seconds(30),
+    });
 
-    notificationStreamHandler.addEventSource(new DynamoEventSource(props.notificationsTable, {
-      startingPosition: lambda.StartingPosition.LATEST
-    }))
+    notificationStreamHandler.addEventSource(
+      new DynamoEventSource(props.notificationsTable, {
+        startingPosition: lambda.StartingPosition.LATEST,
+      }),
+    );
 
-    const iotCoreToWebsocket = new lambdanode.NodejsFunction(this, 'iotCoreToWebsocketHandler', {
+    const iotCoreToWebsocket = new lambdanode.NodejsFunction(this, "iotCoreToWebsocketHandler", {
       runtime: Runtime.NODEJS_18_X,
-      entry: '../backend/websocket/iotCoreToWebsocket.ts',
+      entry: "../backend/websocket/iotCoreToWebsocket.ts",
       environment: {
         CONNECTION_TABLE_NAME: props.connectionIdTable.tableName,
         // NOTIFICATION_TABLE_NAME: props.notificationsTable.tableName
       },
       // timeout: Duration.seconds(30)
-    })
+    });
+
+    const websocketToIotCore = new lambdanode.NodejsFunction(this, "websocketToIotCoreHandler", {
+      runtime: Runtime.NODEJS_18_X,
+      entry: "../backend/websocket/websocketToIotCore.ts",
+      environment: {
+        CONNECTION_TABLE_NAME: props.connectionIdTable.tableName,
+        // NOTIFICATION_TABLE_NAME: props.notificationsTable.tableName
+      },
+      // timeout: Duration.seconds(30)
+    });
 
     props.connectionIdTable.grantReadWriteData(websocketHandler);
-    props.connectionIdTable.grantReadWriteData(connectHandler)
-    props.connectionIdTable.grantReadWriteData(disconnectHandler)
-    props.connectionIdTable.grantReadWriteData(sendNotificationHandler)
-    props.connectionIdTable.grantReadWriteData(notificationStreamHandler)
-    props.connectionIdTable.grantReadWriteData(iotCoreToWebsocket)
+    props.connectionIdTable.grantReadWriteData(connectHandler);
+    props.connectionIdTable.grantReadWriteData(disconnectHandler);
+    props.connectionIdTable.grantReadWriteData(sendNotificationHandler);
+    props.connectionIdTable.grantReadWriteData(notificationStreamHandler);
+    props.connectionIdTable.grantReadWriteData(iotCoreToWebsocket);
 
-    props.notificationsTable.grantReadWriteData(sendNotificationHandler)
-    props.notificationsTable.grantReadWriteData(getNotificationHandler)
-    props.notificationsTable.grantReadWriteData(notificationStreamHandler)
+    props.notificationsTable.grantReadWriteData(sendNotificationHandler);
+    props.notificationsTable.grantReadWriteData(getNotificationHandler);
+    props.notificationsTable.grantReadWriteData(notificationStreamHandler);
 
     this.authHandler = authHandler;
     this.websocketHandler = websocketHandler;
     this.connectHandler = connectHandler;
-    this.disconnectHandler = disconnectHandler
-    this.sendNotificationHandler = sendNotificationHandler
-    this.getNotificationHandler = getNotificationHandler
-    this.notificationStreamHandler = notificationStreamHandler
-    this.iotCoreToWebsocket = iotCoreToWebsocket
+    this.disconnectHandler = disconnectHandler;
+    this.sendNotificationHandler = sendNotificationHandler;
+    this.getNotificationHandler = getNotificationHandler;
+    this.notificationStreamHandler = notificationStreamHandler;
+    this.iotCoreToWebsocket = iotCoreToWebsocket;
+    this.websocketToIotCore = websocketToIotCore;
   }
 }
