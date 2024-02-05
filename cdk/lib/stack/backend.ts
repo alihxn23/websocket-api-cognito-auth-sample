@@ -56,6 +56,11 @@ export class BackendStack extends cdk.Stack {
 
     // handler.websocketToIotCore.addToRolePolicy(new cdk.aws_iam.)
 
+    handler.websocketToIotCore.addToRolePolicy(new cdk.aws_iam.PolicyStatement({
+      actions: ['iot:Publish'],
+      resources: [`arn:aws:iot:${this.region}:${this.account}:topic/*`]
+    }))
+
     {
       new cdk.CfnOutput(this, `Region`, {
         value: cdk.Stack.of(this).region,

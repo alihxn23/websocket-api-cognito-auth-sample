@@ -16,13 +16,15 @@ export const handler: APIGatewayProxyHandler = async (event, context) => {
   const routeKey = event.requestContext.routeKey!;
   const connectionId = event.requestContext.connectionId!;
   const body = JSON.parse(event.body || "");
-  const content = body.content;
+  let content = { message: body.content, from: event.requestContext.authorizer?.email, connectionId };
   const topicName = body.topicName;
   console.log("request body", body);
 
   const input = {
     topic: topicName,
-    payload: content,
+    // payload: Buffer.from(content),
+    payload: JSON.stringify(content),
+    qos: 0
   };
 
   const command = new PublishCommand(input);
